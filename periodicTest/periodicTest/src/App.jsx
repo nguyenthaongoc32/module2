@@ -1,33 +1,42 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+
+import Header from './component/Header/Header'
+import { Route, Routes } from 'react-router-dom';
+import All from './component/All/All';
+import Active from './component/Active/Active';
+import Completed from './component/Completed/Completed';
+import AddInput from './component/AddToDo/AddInput';
+import Nav from './component/Header/Nav';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [todos, setTodos] = useState([]);
+  const addToDo = (todo) => {
+    setTodos([...todos, { text: todo, completed: false }]);
+  };
+
+  const toggleTodo = (index) => {
+    const newTodos = [...todos];
+    newTodos[index].completed = !newTodos[index].completed;
+    setTodos(newTodos);
+  };
+
+  const deleteAllCompleted = () => {
+    const newTodos = todos.filter(todo => !todo.completed);
+    setTodos(newTodos);
+  };
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <Header />
+      <main className='page-main' style={{ margin: "3rem 0" }}>
+        <Nav/>
+      </main>
+      <Routes>
+        <Route path='/all' element={<All todos={todos} addToDo={addToDo} toggleTodo={toggleTodo} />}></Route>
+        <Route path='/active' element={<Active todos={todos} addToDo={addToDo} toggleTodo={toggleTodo} />} />
+
+        <Route path='/completed' element={<Completed todos={todos} deleteAllCompleted={deleteAllCompleted} />}></Route>
+      </Routes>
     </>
   )
 }

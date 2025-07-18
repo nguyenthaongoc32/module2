@@ -1,0 +1,40 @@
+.page-menu{
+    display: flex;
+    justify-content: space-evenly;
+  
+}
+.page-menu-app{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+
+}
+.title-app{
+    font-size: 14px;
+    font-weight: 600;
+    padding: 1rem 0;
+}
+.title-app.pln{
+    color: #2f80ed;
+    padding: 1.5rem 0;
+    border-radius: 5px;
+}
+.page-underline{
+    width: 90px;
+    height: 4px;
+    border-radius: 4px 4px 0 0;
+    background: #fff;
+    transition: .2s;
+}
+.page-underline:hover{
+    width: 84px;
+    height: 4px;
+    border-radius: 4px 4px 0 0;
+    background: #2f80ed;
+  
+}
+.page-link{
+    text-decoration: none;
+    color: black;
+}
