@@ -5,22 +5,41 @@ import { calculatePrice } from "./calculatePrice.js";
 // Search car
 export const searchCar = async (req, res) => {
   try {
-    const { pickup_date, return_date } = req.query;
-    let filter = { status: "available" };
+    const { pickup_date, return_date, pickup_time, return_time } = req.query;
 
-    const cars = await CarModel.find(filter);
-    res.json({ success: true, cars });
+    const pickupDateTime = new Date(`${pickup_date}T${pickup_time}`);
+    const returnDateTime = new Date(`${return_date}T${return_time}`);
+
+    // Lấy danh sách xe đang bị trùng booking
+    const bookedCars = await BookingModel.find({
+      status: { $ne: "cancelled" },
+      $or: [
+        {
+          pickup_date: { $lte: returnDateTime },
+          return_date: { $gte: pickupDateTime },
+        },
+      ],
+    }).distinct("carId");
+
+    // Lấy xe KHÔNG nằm trong bookedCars
+    const availableCars = await CarModel.find({
+      _id: { $nin: bookedCars },
+      status: "available", 
+    });
+
+    res.status(200).json({ ok: true, data: availableCars });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error("Search error:", error);
+    res.status(500).json({ ok: false, message: error.message });
   }
 };
+
 
 // Create booking
 export const createBooking = async (req, res) => {
   try {
     const {
       carId,
-      customer,
       pickup_location,
       pickup_date,
       return_date,
@@ -30,8 +49,10 @@ export const createBooking = async (req, res) => {
       subOption,
     } = req.body;
 
+    const customer = req.userId;
+
     const car = await CarModel.findById(carId);
-    if (!car) return res.status(404).json({ ok: false, error: "Car not found" });
+    if (!car) return res.status(404).json({ ok: false, message: "Car not found" });
 
     // Tính giá
     const priceData = calculatePrice(
@@ -43,9 +64,10 @@ export const createBooking = async (req, res) => {
       paymentOption
     );
 
+    // Tạo booking
     const booking = new BookingModel({
       carId,
-      customer, 
+      customer,
       pickup_location,
       pickup_date,
       return_date,
@@ -58,12 +80,13 @@ export const createBooking = async (req, res) => {
 
     await booking.save();
 
-    // update car status
+    // Cập nhật trạng thái xe nếu muốn
     car.status = "maintenance";
     await car.save();
 
     res.json({ ok: true, data: booking });
   } catch (error) {
+    console.error("Booking error:", error);
     res.status(500).json({ ok: false, error: error.message });
   }
 };
@@ -115,22 +138,42 @@ export const cancle = async (req, res) =>{
   try {
     const booking = await BookingModel.findById(req.params.id);
     if (!booking)
-      return res.status(404).json({ ok: false, message: "Không tìm thấy đơn đặt" });
+      return res.status(404).json({ ok: false, message: "Order not found" });
 
     // Chỉ cho phép hủy nếu trạng thái hiện tại là reserved
     if (booking.status !== "reserved")
       return res
         .status(400)
-        .json({ ok: false, message: "Đơn này không thể hủy" });
+        .json({ ok: false, message: "This order cannot be cancelled." });
 
     booking.status = "cancelled";
     await booking.save();
 
-    res.status(200).json({ ok: true, message: "Đã hủy đơn thành công" });
+    res.status(200).json({ ok: true, message: "Order cancelled successfully" });
   } catch (error) {
     console.error("Cancel booking error:", error);
-    res.status(500).json({ ok: false, message: "Lỗi khi hủy đơn" });
+    res.status(500).json({ ok: false, message: "Error when canceling order" });
   }
 }
+// Lấy danh sách lịch đã được đặt của 1 xe
+export const getBookingsByCarId = async (req, res) => {
+  try {
+    const carId = req.params.carId;
+
+    const bookings = await BookingModel.find({
+      carId,
+      status: { $ne: "cancelled" } // không lấy lịch bị hủy
+    }).select("pickup_date pickup_time return_date return_time -_id"); // chỉ lấy những trường cần
+
+    if (!bookings.length) {
+      return res.status(200).json({ ok: true, message: "No bookings found for this car", bookings: [] });
+    }
+
+    return res.status(200).json({ ok: true, bookings });
+  } catch (error) {
+    console.error("Error fetching bookings by carId:", error);
+    return res.status(500).json({ ok: false, message: "Server error" });
+  }
+};
 
 

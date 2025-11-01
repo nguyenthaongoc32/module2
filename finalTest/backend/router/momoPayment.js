@@ -1,9 +1,10 @@
+// routes/MomoPayRoute.js
 import express from "express";
-import { createPayment} from "../controller/MomoPayController.js";
-
+import { createPayment, handleMomoIPN } from "../controller/MomoPayController.js";
 
 const Router = express.Router();
 
-Router.route("/createPayment").post(createPayment);
+Router.post("/createPayment", createPayment);
+Router.post("/ipn", handleMomoIPN);
 
 export default Router;

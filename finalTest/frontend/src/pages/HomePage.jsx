@@ -6,7 +6,7 @@ import CarList from '../component/homePage/CarList'
 import Offers from '../component/homePage/Offers'
 import WhyChoose from '../component/homePage/WhyChoose'
 import ContactUs from '../component/homePage/ContactUs'
-
+import { Responsive } from "../component/Reponsive.js";
 const HomePage = () => {
   return (
     <>

@@ -1,8 +1,8 @@
 import React from "react";
-
+import { Responsive } from "../Reponsive.js";
 const WhyChooseUs = () => {
   return (
-    <div className="px-40 lg:px-40 py-16 ">
+    <div className="px-40 lg:px-40 py-16 " responsive={Responsive}>
       {/* Title */}
       <h1 className="text-5xl font-bold mb-8">
         Why choose <span className="text-red-500">us</span>

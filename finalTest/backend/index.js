@@ -7,6 +7,7 @@ import cors from "cors";
 import imageRouter from "./router/imageRouter.js";
 import bookingRouter from "./router/bookingRouter.js";
 import momoPaymentRouter from "./router/momoPayment.js"
+import adminRouter from "./router/adminRouter.js"
 dotenv.config();
 
 const app = express();
@@ -22,7 +23,7 @@ app.use("/image", imageRouter)
 app.use("/api/car",carRouter)
 app.use("/api/booking",bookingRouter)
 app.use("/api/momo",momoPaymentRouter)
-
+app.use("/admin" , adminRouter)
 app.listen(8080, () => {
     console.log('Server is running!');
 });

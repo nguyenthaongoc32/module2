@@ -11,7 +11,7 @@ export const calculatePrice = (
   const diffMs = end - start;
 
   if (diffMs < 24 * 60 * 60 * 1000) {
-    throw new Error("Thời gian thuê tối thiểu là 1 ngày!");
+    throw new Error("Minimum rental period is 1 day!");
   }
 
   const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));

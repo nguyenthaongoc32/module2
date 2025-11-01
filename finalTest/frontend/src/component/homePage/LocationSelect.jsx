@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ChevronDownIcon, MapPinIcon } from "@heroicons/react/24/solid";
-
+import { Responsive } from "../Reponsive.js";
 const locations = [
     {group:"Famous" , items: ["TP.Hồ Chí Minh" , "Hà Nội", "Đà Nẵng" , "Phú Quốc (Kiên Giang)","Nha Trang (Khánh Hòa)","Đà Lạt (Lâm Đồng)"]},
   { group: "Miền Nam", items: ["TP. Hồ Chí Minh","Vùng Tàu", "Long An", "Trà Vinh", "Cần Thơ"] },
@@ -19,7 +19,7 @@ const PickupLocationSelect = ({ onChange }) => {
   };
 
   return (
-    <div className="w-100 relative">
+    <div className="w-100 relative"responsive={Responsive}>
       {/* Nút chọn location */}
       <button
         onClick={() => setOpen(!open)}

@@ -1,8 +1,8 @@
 import React from "react";
-
+import { Responsive } from "../Reponsive.js";
 const ContactUs = () => {
   return (
-    <div className="bg-red-500 text-white px-6 lg:px-32 py-16">
+    <div className="bg-red-500 text-white px-6 lg:px-32 py-16" responsive={Responsive}>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
         
         {/* Left side: CTA text */}

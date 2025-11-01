@@ -2,54 +2,48 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-
+import { Responsive } from "../component/Reponsive.js";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
     try {
-      const response = await axios.post("http://localhost:8080/api/auth/login", {
-        email,
-        password,
-      });
-
-      // ✅ Lưu thông tin người dùng
-      const { token, user } = response.data;
+      const res = await axios.post("http://localhost:8080/api/auth/login", { email, password });
+      const { token, user } = res.data;
+  
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
-
-      // 🔹 Thêm 2 dòng này để Header đọc được
-      localStorage.setItem("userName", user.name || user.fullName || "");
-      localStorage.setItem("userAvatar", user.avatar || user.image || "");
-
-      // 🔄 Bắn sự kiện để Header cập nhật ngay
+  
+      // ✅ thêm các key Header cần
+      localStorage.setItem("userName", user.name || user.username || user.email);
+      localStorage.setItem("userAvatar", user.avatar || "/default-avatar.png");
       window.dispatchEvent(new Event("storage"));
-
+  
       toast.success("Login successful!");
-      navigate("/"); // quay về trang chủ
+  
+      if (user.role === "admin") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        "Invalid credentials";
-      toast.error(errorMessage);
-      console.error("Login error:", error);
+      const msg = error.response?.data?.message || "Login failed!";
+      toast.error(msg);
     }
   };
+  
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen">
+    <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen" responsive={Responsive}>
       {/* Left: Background */}
       <div className="hidden md:flex items-center justify-center">
         <img src="/bg.png" alt="Background" className="w-[90%] object-cover" />
       </div>
 
-      {/* Right: Form */}
+      {/* Right: Login form */}
       <div className="flex items-center justify-center bg-white p-6">
         <form
           className="w-full max-w-sm bg-blue-600 bg-opacity-10 p-6 rounded-lg shadow-lg flex flex-col gap-4"
@@ -57,7 +51,6 @@ const Login = () => {
         >
           <div className="text-blue-500 text-4xl text-center mb-2">Login</div>
 
-          {/* Email */}
           <div className="relative z-0 w-full mb-5 group">
             <input
               type="email"
@@ -72,7 +65,6 @@ const Login = () => {
             </label>
           </div>
 
-          {/* Password */}
           <div className="relative z-0 w-full mb-5 group">
             <input
               type="password"
@@ -87,7 +79,6 @@ const Login = () => {
             </label>
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 font-medium rounded-lg text-sm w-full px-5 py-2.5"
@@ -95,26 +86,11 @@ const Login = () => {
             Log In
           </button>
 
-          {/* Google login */}
-          <button
-            type="button"
-            className="flex items-center justify-center gap-2 text-black bg-white hover:text-blue-500 focus:ring-4 font-medium rounded-lg text-sm w-full px-5 py-2.5 border-2 border-gray-200 transition-all duration-300"
-          >
-            <img src="/google.jpg" alt="Google" className="w-5 h-5" />
-            <span className="text-sm text-gray-700">Sign in with Google</span>
-          </button>
-
-          {/* Register link */}
           <div className="text-center text-sm text-gray-700 mt-2">
-            <div className="flex justify-center gap-1">
-              <span>Don't have an account?</span>
-              <Link
-                to="/Register"
-                className="text-blue-600 font-semibold hover:text-red-600"
-              >
-                Register
-              </Link>
-            </div>
+            <span>Don't have an account?</span>{" "}
+            <Link to="/register" className="text-blue-600 font-semibold hover:text-red-600">
+              Register
+            </Link>
           </div>
         </form>
       </div>

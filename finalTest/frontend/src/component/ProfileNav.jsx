@@ -3,10 +3,10 @@ import { MdAccountCircle } from "react-icons/md";
 import { FaCarSide } from "react-icons/fa";
 import { IoShieldCheckmarkSharp } from "react-icons/io5";
 import { TiClipboard } from "react-icons/ti";
-
+import { Responsive } from "../component/Reponsive.js";
 const ProfileNav = ({ activeTab, setActiveTab }) => {
   return (
-    <nav className="flex flex-col w-full gap-2">
+    <nav className="flex flex-col w-full gap-2" responsive={Responsive}>
       <button
         onClick={() => setActiveTab("accountInfo")}
         className={`flex items-center gap-2 px-3 py-2 rounded-md text-left ${
@@ -32,7 +32,7 @@ const ProfileNav = ({ activeTab, setActiveTab }) => {
       </button>
 
       <button
-        disabled
+  
         className="flex items-center gap-2 px-3 py-2 rounded-md text-left opacity-60 cursor-not-allowed"
       >
         <IoShieldCheckmarkSharp />
@@ -40,7 +40,7 @@ const ProfileNav = ({ activeTab, setActiveTab }) => {
       </button>
 
       <button
-        disabled
+    
         className="flex items-center gap-2 px-3 py-2 rounded-md text-left opacity-60 cursor-not-allowed"
       >
         <TiClipboard />

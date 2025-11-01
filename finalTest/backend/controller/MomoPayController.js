@@ -1,112 +1,156 @@
+// controllers/MomoPayController.js
 import crypto from "crypto";
 import axios from "axios";
+import querystring from "querystring";
 import MomoPayModel from "../model/MomoPay.js";
-import MomoConfig from "../config/MomoConfig.js";
-
+import BookingModel from "../model/Booking.js";
+import  MomoConfig  from "../config/MomoConfig.js";
 export const createPayment = async (req, res) => {
   try {
-    const { amount, orderInfo, userId, carId, bookingId, paymentOption } = req.body;
+    const {
+      amount,
+      carId,
+      pickup_location,
+      pickup_date,
+      pickup_time,
+      return_date,
+      return_time,
+      days,
+      hours,
+      vat,
+      deposit,
+      total_price,
+      paymentOption,
+      userId,
+    } = req.body;
 
-    if (!amount || !userId || !carId || !bookingId) {
-      return res.status(400).json({ message: "Missing payment information!" });
-    }
+    const orderId = `${Date.now()}`;
+    const requestId = `${Date.now()}`;
+    const requestType = "captureWallet";
 
+    const extraData = JSON.stringify({
+      carId,
+      userId,
+      bookingData: {
+        pickup_location,
+        pickup_date,
+        pickup_time,
+        return_date,
+        return_time,
+        days,
+        hours,
+        vat,
+        deposit,
+        total_price,
+        paymentOption,
+      },
+    });
 
-let finalAmount = amount;
-
-
-if (paymentOption === "traSau") {
-  finalAmount = Math.round(amount); 
-}
-
-
-else if (paymentOption === "traTruoc") {
-  finalAmount = Math.round(amount * 0.95); 
-}
-    const amountVND = Math.round(finalAmount );
-
-    if (amountVND < 1000 || amountVND > 50000000) {
-      return res.status(400).json({
-        message: "Transaction amount must be from 1,000 VND to 50,000,000 VND.",
-        amountVND,
-      });
-    }
-
-    const requestId = `${MomoConfig.partnerCode}_${Date.now()}`;
-    const orderId = requestId;
-
-    const redirectUrlWithBookingId = `${MomoConfig.redirectUrl}?bookingId=${bookingId}`;
-    const extraData = JSON.stringify({ carId, bookingId });
-
-
-    const rawSignature =
-      `accessKey=${MomoConfig.accessKey}` +
-      `&amount=${amountVND}` +
-      `&extraData=${extraData}` +
-      `&ipnUrl=${MomoConfig.ipnUrl}` +
-      `&orderId=${orderId}` +
-      `&orderInfo=${orderInfo}` +
-      `&partnerCode=${MomoConfig.partnerCode}` +
-      `&redirectUrl=${redirectUrlWithBookingId}` + 
-      `&requestId=${requestId}` +
-      `&requestType=captureWallet`;
+    const signatureRaw = `accessKey=${MomoConfig.accessKey}`
+      + `&amount=${amount}`
+      + `&extraData=${extraData}`
+      + `&ipnUrl=${MomoConfig.ipnUrl}`
+      + `&orderId=${orderId}`
+      + `&orderInfo=Thanh toan dat xe`
+      + `&partnerCode=${MomoConfig.partnerCode}`
+      + `&redirectUrl=${MomoConfig.redirectUrl}`
+      + `&requestId=${requestId}`
+      + `&requestType=${requestType}`;
 
     const signature = crypto
       .createHmac("sha256", MomoConfig.secretKey)
-      .update(rawSignature)
+      .update(signatureRaw)
       .digest("hex");
 
     const requestBody = {
       partnerCode: MomoConfig.partnerCode,
       accessKey: MomoConfig.accessKey,
+      secretKey: MomoConfig.secretKey,
       requestId,
-      amount: String(amountVND),
+      amount,
       orderId,
-      orderInfo,
-      redirectUrl: redirectUrlWithBookingId,
+      orderInfo: "Thanh toan dat xe",
+      redirectUrl: MomoConfig.redirectUrl,
       ipnUrl: MomoConfig.ipnUrl,
-      requestType: "captureWallet",
       extraData,
+      requestType,
       signature,
       lang: "vi",
     };
 
-    console.log("✅ rawSignature:", rawSignature);
-    console.log("✅ signature:", signature);
+    const response = await axios.post(
+      "https://test-payment.momo.vn/v2/gateway/api/create",
+      requestBody
+    );
 
-    const momoResponse = await axios.post(MomoConfig.endpoint, requestBody, {
-      headers: { "Content-Type": "application/json" },
-    });
-
-    console.log("💬 Momo resp:", momoResponse.data);
-
-    if (momoResponse.data && momoResponse.data.payUrl) {
+    if (response.data.resultCode === 0) {
       await MomoPayModel.create({
         orderId,
-        requestId,
+        requestId,        // 🔹 bắt buộc
         userId,
-        bookingId,
-        amount: amountVND,
-        paymentType: "MOMO",
+        carId,
+        amount,
+        paymentType: "MOMO", // 🔹 bắt buộc
         status: "PENDING",
       });
-
-      return res.json({
-        message: "Create payment successfully",
-        payUrl: momoResponse.data.payUrl,
-        depositVND: amountVND,
+      
+      return res.status(200).json({
+        payUrl: response.data.payUrl,
+        message: "Create MoMo payment success",
       });
     } else {
-      return res.status(500).json({
-        message: "Payment failed",
-        data: momoResponse.data,
-      });
+      return res.status(400).json({ message: "MoMo payment error" });
     }
   } catch (error) {
-    console.error("Payment error:", error.response?.data || error.message);
-    return res.status(500).json({
-      message: "Payment failed. Please try again.",
-      error: error.response?.data || error.message,
-    });
+    console.error("MoMo Payment Error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const handleMomoIPN = async (req, res) => {
+  try {
+    const { orderId, resultCode, extraData, transId } = req.body;
+
+    // Tìm payment theo orderId
+    const payment = await MomoPayModel.findOne({ orderId });
+    if (!payment) return res.status(404).json({ message: "Payment not found!" });
+
+    // Nếu thanh toán thành công
+    if (resultCode === 0) {
+      payment.status = "SUCCESS";
+      payment.transactionId = transId;
+      await payment.save();
+
+      const { carId, userId, bookingData, bookingId } = JSON.parse(extraData);
+
+      // Xác định trạng thái booking dựa vào paymentOption
+      const status =
+        bookingData.paymentOption === "traTruoc" ? "completed" : "reserved";
+
+      // Cập nhật booking đã tạo trước khi thanh toán (trả sau) hoặc tạo mới
+      if (bookingId) {
+        await BookingModel.findByIdAndUpdate(bookingId, {
+          status,
+          subOption: "MOMO",
+        });
+      } else {
+        await BookingModel.create({
+          carId,
+          customer: userId,
+          ...bookingData,
+          subOption: "MOMO",
+          status,
+        });
+      }
+
+      return res.status(200).json({ message: "Payment and booking success!" });
+    } else {
+      payment.status = "FAILED";
+      await payment.save();
+      return res.status(400).json({ message: "Payment failed or canceled" });
+    }
+  } catch (error) {
+    console.error("IPN Handler Error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

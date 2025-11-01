@@ -4,6 +4,7 @@ import "react-multi-carousel/lib/styles.css";
 import axios from "axios";
 import CarCard from "./CarCard.jsx";
 import CustomButtonGroup from "./CustomButtonGroup.jsx";
+import { Responsive } from "../Reponsive.js";
 const CarList = () => {
   const [cars, setCars] = useState([]);
 
@@ -31,7 +32,7 @@ const CarList = () => {
   };
 
   return (
-    <div className="relative my-12 mx-auto px-[150px]">
+    <div className="relative my-12 mx-auto px-[150px]" responsive={Responsive}>
       {cars.length > 0 && (
         <Carousel
           responsive={responsive}

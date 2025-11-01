@@ -1,12 +1,12 @@
 import React from "react";
 import Header from "../Header";
 import Footer from "../footer";
-
+import { Responsive } from "../Reponsive.js";
 const JustInCity= () => {
   return (
     <>
     <Header/>
-    <div className="px-40 lg:px-40 py-16 ">
+    <div className="px-40 lg:px-40 py-16 " responsive={Responsive}>
       {/* Title */}
       <h1 className="text-7xl font-bold mb-8">
       Explore the City with  <span className="text-red-500">Savings!</span>

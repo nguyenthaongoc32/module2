@@ -4,7 +4,7 @@ import { faCircleUser } from "@fortawesome/free-regular-svg-icons";
 import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-
+import { Responsive } from "../component/Reponsive.js";
 const Header = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userName, setUserName] = useState(localStorage.getItem("userName"));
@@ -12,17 +12,17 @@ const Header = () => {
   const navigate = useNavigate();
   const dropdownRef = useRef();
 
-  // 🟢 Cập nhật khi localStorage thay đổi (kể cả login xong)
+
   useEffect(() => {
     const handleStorageChange = () => {
       setUserName(localStorage.getItem("userName"));
       setUserAvatar(localStorage.getItem("userAvatar"));
     };
 
-    // Lắng nghe khi login từ bất kỳ nơi nào
+
     window.addEventListener("storage", handleStorageChange);
 
-    // Lắng nghe mỗi khi token / username được ghi trong cùng tab
+
     const observer = new MutationObserver(handleStorageChange);
     observer.observe(document, { subtree: true, childList: true });
 
@@ -32,7 +32,7 @@ const Header = () => {
     };
   }, []);
 
-  // 🔐 Đóng dropdown khi click ra ngoài
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -53,23 +53,23 @@ const Header = () => {
   };
 
   return (
-    <nav className="bg-gray-200 border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+    <nav className="bg-gray-200 border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700" responsive={Responsive}>
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          {/* 🌟 Logo */}
+    
           <a href="/" className="flex items-center space-x-3">
             <img src="/logo.png" className="h-16 w-auto" alt="Logo" />
             <span className="text-2xl font-semibold dark:text-white">DriveNow</span>
           </a>
 
-          {/* 🧭 Menu */}
+   
           <div className="hidden md:flex space-x-20">
             <a href="/" className="text-blue-700 font-medium hover:underline">Home</a>
             <a href="#" className="text-gray-900 dark:text-white hover:text-blue-600">About</a>
             <a href="#" className="text-gray-900 dark:text-white hover:text-blue-600">Services</a>
           </div>
 
-          {/* 🔍 + 👤 */}
+
           <div className="flex items-center space-x-10">
             {/* Search */}
             <div className="relative hidden md:block">
@@ -91,7 +91,7 @@ const Header = () => {
               </div>
             </div>
 
-            {/* 👤 User */}
+       
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}

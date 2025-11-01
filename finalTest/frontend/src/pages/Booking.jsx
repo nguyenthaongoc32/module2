@@ -6,7 +6,8 @@ import { MdAirlineSeatReclineNormal } from "react-icons/md";
 import { GiCarDoor } from "react-icons/gi";
 import { IoSnowOutline } from "react-icons/io5";
 import { MdOutlineSettings } from "react-icons/md";
-
+import { toast } from "react-toastify";
+import { Responsive } from "../component/Reponsive.js";
 const Booking = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
@@ -19,28 +20,29 @@ const Booking = () => {
   const [paymentOption, setPaymentOption] = useState("traSau");
   const [subOption, setSubOption] = useState("Momo");
   const [bookingData, setBookingData] = useState(null);
+
   const user = JSON.parse(localStorage.getItem("user"));
+  const token = localStorage.getItem("token");
 
-  // 🧩 Nếu không có car (refresh trang) → lấy carId từ localStorage hoặc chuyển hướng
   useEffect(() => {
-    if (car) return;
-
-    const savedCar = localStorage.getItem("selectedCar");
-    if (savedCar) {
-      setCar(JSON.parse(savedCar));
-    } else {
-      navigate("/"); // Không có dữ liệu → quay về trang chủ
+    if (!car) {
+      const savedCar = localStorage.getItem("selectedCar");
+      if (savedCar) {
+        setCar(JSON.parse(savedCar));
+      } else {
+        navigate("/");
+      }
     }
   }, [car, navigate]);
 
-  // 💾 Lưu car vào localStorage (phòng khi refresh)
+  // Lưu car vào localStorage
   useEffect(() => {
     if (car) {
       localStorage.setItem("selectedCar", JSON.stringify(car));
     }
   }, [car]);
 
-  // 🧮 Gọi API tính giá
+  // Gọi API tính giá
   useEffect(() => {
     if (!car) return;
 
@@ -74,39 +76,49 @@ const Booking = () => {
     fetchPrice();
   }, [car, pickupDate, pickupTime, returnDate, returnTime, paymentOption, subOption]);
 
-  // 🧾 Gửi yêu cầu đặt xe
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!car) {
-      alert("Không tìm thấy thông tin xe!");
+      toast.warning("Car information not found!");
+      return;
+    }
+
+    if (!token) {
+      toast.warning("You need to login to book a car!");
+      navigate("/login");
       return;
     }
 
     try {
-      // 1️⃣ Tạo booking
-      const bookingRes = await axios.post("http://localhost:8080/api/booking/createBooking", {
-        carId: car._id,
-        customer: user?._id,
-        pickup_date: pickupDate,
-        return_date: returnDate,
-        pickup_time: pickupTime,
-        return_time: returnTime,
-        paymentOption,
-        subOption,
-      });
+      // Tạo booking
+      const bookingRes = await axios.post(
+        "http://localhost:8080/api/booking/createBooking",
+        {
+          carId: car._id,
+          pickup_date: pickupDate,
+          return_date: returnDate,
+          pickup_time: pickupTime,
+          return_time: returnTime,
+          paymentOption,
+          subOption,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (!bookingRes.data.ok || !bookingRes.data.data) {
-        alert("Đặt xe thất bại: " + (bookingRes.data.error || "Unknown error"));
+        toast.error("Booking failed:" + (bookingRes.data.error || "Unknown error"));
         return;
       }
 
       const bookingId = bookingRes.data.data._id;
 
-      // 2️⃣ Thanh toán Momo (nếu có)
+      // Thanh toán MoMo
       if (subOption === "Momo") {
         if (!bookingData) {
-          alert("Vui lòng đợi hệ thống tính giá xong trước khi thanh toán!");
+          toast.warning("Please wait for the system to calculate the price before paying!");
           return;
         }
 
@@ -118,85 +130,83 @@ const Booking = () => {
         }
 
         // Chuyển USD sang VND nếu cần
-        if (car.price_per_day.currency === "$" || car.price_per_day.currency === "USD") {
+        if (car.price_per_day?.currency === "$" || car.price_per_day?.currency === "USD") {
           payAmount = Math.round(payAmount * 25000);
         }
 
-        const momoRes = await axios.post("http://localhost:8080/api/momo/createPayment", {
-          amount: payAmount,
-          orderInfo:
-            paymentOption === "traSau"
-              ? `Đặt cọc thuê xe ${car.make} ${car.model}`
-              : `Thanh toán thuê xe ${car.make} ${car.model}`,
-          userId: user?._id,
-          carId: car._id,
-          bookingId,
-          paymentOption,
-        });
+        const momoRes = await axios.post(
+          "http://localhost:8080/api/momo/createPayment",
+          {
+            amount: payAmount,
+            orderInfo:
+              paymentOption === "traSau"
+                ? `Đặt cọc thuê xe ${car.make} ${car.model}`
+                : `Thanh toán thuê xe ${car.make} ${car.model}`,
+            userId: user?._id,
+            carId: car._id,
+            bookingId,
+            paymentOption,
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
         if (momoRes.data?.payUrl) {
           window.location.href = momoRes.data.payUrl;
         } else {
-          alert("Không tạo được liên kết thanh toán Momo!");
+          toast.error("Unable to create Momo payment link!");
         }
         return;
       }
 
-      // 3️⃣ Nếu không dùng Momo
-      alert("Đặt xe thành công!");
+      toast.success("Booking successful!");
       navigate("/");
-
     } catch (err) {
       console.error("Booking/Payment error:", err);
-      alert("Lỗi server, vui lòng thử lại.");
+      const errorMessage = err.response?.data?.message || "Server error, please try again.";
+      if (errorMessage.includes("Xe đã được đặt trong khung thời gian")) {
+        toast.warning("🚫 Xe đã được đặt trong thời gian này! Vui lòng chọn khung giờ khác.");
+      } else {
+        toast.error(errorMessage);
+      }
     }
   };
 
-  // ⚠️ Nếu chưa có car thì hiển thị thông báo
-  if (!car) {
-    return (
-      <div className="p-10 text-center text-red-600 text-xl font-bold">
-        ❌ Không tìm thấy thông tin xe. Vui lòng quay lại và chọn xe.
-      </div>
-    );
-  }
+  if (!car) return <p>Loading car information...</p>;
 
   return (
     <>
       <Header />
-      <div className="flex justify-center p-6">
+      <div className="flex justify-center p-6" responsive={Responsive}>
         <div className="grid grid-cols-3 gap-6 bg-gray-50 p-6 rounded-lg shadow max-w-5xl w-full">
           {/* LEFT - Thông tin xe */}
           <div className="col-span-1 space-y-4">
             <div className="bg-white shadow rounded p-4">
               <img
-                src={car.images?.[0] || "/placeholder.jpg"}
-                alt={`${car.make || ""} ${car.model || ""}`}
+                src={car?.images?.[0] || "/placeholder.jpg"}
+                alt={`${car?.make || ""} ${car?.model || ""}`}
                 className="h-40 w-full object-cover rounded"
               />
               <h1 className="text-3xl font-bold text-red-500 font-mono text-center">
-                {car.make} {car.model}
+                {car?.make || "Car"} {car?.model || ""}
               </h1>
-              <p className="text-xl font-bold font-serif text-center">
-                {car.category}
-              </p>
+              <p className="text-xl font-bold font-serif text-center">{car?.category || ""}</p>
 
               <div className="flex flex-wrap gap-2 mt-6 text-gray-600 text-xs">
                 <p className="flex items-center gap-2">
                   <MdAirlineSeatReclineNormal size={28} className="text-red-500" />
-                  {car.features?.seats} seats
+                  {car?.features?.seats || 0} seats
                 </p>
                 <p className="flex items-center gap-2">
                   <GiCarDoor size={28} className="text-red-500" />
-                  {car.features?.doors} doors
+                  {car?.features?.doors || 0} doors
                 </p>
                 <p className="flex items-center gap-2">
                   <IoSnowOutline size={28} className="text-red-500" />
-                  {car.features?.ac ? "YES" : "NO"}
+                  {car?.features?.ac ? "YES" : "NO"}
                 </p>
                 <p className="flex items-center gap-2">
                   <MdOutlineSettings size={28} className="text-red-500" />
-                  {car.transmission}
+                  {car?.transmission || ""}
                 </p>
               </div>
 
@@ -211,59 +221,47 @@ const Booking = () => {
             {/* Chi tiết giá */}
             {bookingData && (
               <div className="bg-white shadow rounded p-4">
-                <h2 className="font-bold text-lg mb-2 border-b pb-2">
-                  PRICE DETAILS
-                </h2>
+                <h2 className="font-bold text-lg mb-2 border-b pb-2">PRICE DETAILS</h2>
                 <div className="flex justify-between">
                   <span>Unit price</span>
-                  <span>
-                    {bookingData.pricePerDay?.toLocaleString()} {car.price_per_day.currency}
-                  </span>
+                  <span>{bookingData.pricePerDay?.toLocaleString() || 0} {car?.price_per_day?.currency || "$"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Rental period</span>
-                  <span>
-                    × {bookingData.days} day {bookingData.hours > 0 && `${bookingData.hours}h`}
-                  </span>
+                  <span>× {bookingData.days} day {bookingData.hours > 0 && `${bookingData.hours}h`}</span>
                 </div>
                 <div className="flex justify-between border-b pb-2">
                   <span>Basic price</span>
-                  <span>
-                    {bookingData.basePrice?.toLocaleString()} {car.price_per_day.currency}
-                  </span>
+                  <span>{bookingData.basePrice?.toLocaleString() || 0} {car?.price_per_day?.currency || "$"}</span>
                 </div>
 
                 {paymentOption === "traTruoc" && (
                   <div className="flex justify-between text-green-600">
                     <span>Prepay (-5%)</span>
-                    <span>
-                      -{Math.round(bookingData.basePrice * 0.05).toLocaleString()} {car.price_per_day.currency}
-                    </span>
+                    <span>-{Math.round(bookingData.basePrice * 0.05).toLocaleString()} {car?.price_per_day?.currency || "$"}</span>
                   </div>
                 )}
 
                 <div className="font-bold mt-2">Total price</div>
                 <div className="flex justify-between">
                   <span>VAT (+8%)</span>
-                  <span>
-                    {bookingData.vat?.toLocaleString()} {car.price_per_day.currency}
-                  </span>
+                  <span>{bookingData.vat?.toLocaleString() || 0} {car?.price_per_day?.currency || "$"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Total</span>
-                  <span>
-                    {bookingData.total_price?.toLocaleString()} {car.price_per_day.currency}
-                  </span>
+                  <span>{bookingData.total_price?.toLocaleString() || 0} {car?.price_per_day?.currency || "$"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Deposit</span>
-                  <span>
-                    {bookingData.deposit?.toLocaleString()} {car.price_per_day.currency}
-                  </span>
+                  <span>{bookingData.deposit?.toLocaleString() || 0} {car?.price_per_day?.currency || "$"}</span>
                 </div>
               </div>
             )}
           </div>
+
+ 
+
+
 
           {/* RIGHT - Thông tin khách hàng */}
           <div className="col-span-2 bg-white shadow rounded p-6">

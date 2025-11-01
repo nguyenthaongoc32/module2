@@ -1,39 +1,45 @@
-import {v2 as cloudinary} from "cloudinary"
-import dotenv from "dotenv"
-import sharp from "sharp"
+import { v2 as cloudinary } from "cloudinary";
+import dotenv from "dotenv";
+import sharp from "sharp";
 
-dotenv.config()
+dotenv.config();
 
 cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_SECRET_KEY
-})
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_SECRET_KEY,
+});
 
-const uploadImage = async (req, res, next) => {
-    const file = req.file;
-    if (!file) {
-        return res.status(400).json({ ok: false, error: 'No image file provided' });
+const uploadImage = async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ ok: false, message: "No images uploaded" });
     }
 
-    sharp(file.buffer)
+    const uploadPromises = req.files.map(async (file) => {
+      const buffer = await sharp(file.buffer)
         .resize({ width: 700, height: 418 })
         .jpeg({ quality: 80 })
-        .toBuffer(async (error, data, info) => {
-            if (error) {
-                console.error('Image processing error:', error);
-                return res.status(500).json({ ok: false, error: 'Error processing image' });
-            }
+        .toBuffer();
 
-            cloudinary.uploader.upload_stream({ resource_type: 'auto' }, async (error, result) => {
-                if (error) {
-                    console.error('Cloudinary Upload Error:', error);
-                    return res.status(500).json({ ok: false, error: 'Error uploading image to Cloudinary' });
-                }
+      return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "cars", resource_type: "image" },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result.secure_url);
+          }
+        );
+        stream.end(buffer);
+      });
+    });
 
-                res.json({ ok: true, imageUrl: result.url, message: 'Image uploaded successfully' });
-            }).end(data);
-         })
-}
+    const urls = await Promise.all(uploadPromises);
+    res.json({ ok: true, urls });
+  } catch (error) {
+    console.error("Upload error:", error);
+    res.status(500).json({ ok: false, message: "Error uploading images" });
+  }
+};
 
-export default uploadImage
+export default uploadImage;

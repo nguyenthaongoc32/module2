@@ -1,11 +1,12 @@
 import React from 'react'
 import Header from '../Header'
 import Footer from '../footer'
+import { Responsive } from "../Reponsive.js";
 const UpfrontBooking = () => {
   return (
     <>
     <Header/>
-    <div className="px-40 lg:px-40 py-16 ">
+    <div className="px-40 lg:px-40 py-16 " responsive={Responsive}>
       {/* Title */}
       <h1 className="text-7xl font-bold mb-8">
       DriveNow's  <span className="text-red-500">Upfront Booking</span> Service

@@ -1,9 +1,9 @@
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
+import { Responsive } from "../Reponsive.js";
 const CustomButtonGroup = ({ next, previous }) => {
   return (
-    <div className="absolute top-1/2 w-full -translate-y-1/2 pointer-events-none">
+    <div className="absolute top-1/2 w-full -translate-y-1/2 pointer-events-none" responsive={Responsive}>
       {/* Nút trái */}
       <button
         onClick={previous}

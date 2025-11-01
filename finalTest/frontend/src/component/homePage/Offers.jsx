@@ -1,9 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
-
+import { Responsive } from "../Reponsive.js";
 const Offers = () => {
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-6 lg:px-40 py-20 bg-gray-100">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-6 lg:px-40 py-20 bg-gray-100" responsive={Responsive}>
             <div className="flex flex-col justify-start">
                 <h1 className="text-5xl font-bold text-red-500">
                     <span className=" text-gray-900">DriveNow</span> TOP offers

@@ -12,8 +12,12 @@ import CarSearch from "./pages/CarSearch";
 import ReserveCar from "./pages/ReserveCar";
 import Booking from "./pages/Booking";
 import MyProfile from "./pages/MyProfile";
-
-function App() {
+import Dashboard from "./admin/Dashboard";
+import UserManage from "./admin/UserManage";
+import CarManage from "./admin/CarManage";
+import BookingManage from "./admin/BookingManage";
+import CarForm from "./admin/CarForm";
+function App() { 
   return (
     <>
       {/* <HomePage/> */}
@@ -29,7 +33,11 @@ function App() {
         <Route path="/getCar/:id" element={<ReserveCar/>}/>
         <Route path="/booking" element={<Booking/>}/>
         <Route path="/account" element={<MyProfile />} />
-
+        <Route path="/admin/dashboard" element={<Dashboard/>}/>
+        <Route path="/admin/users" element={<UserManage/>}/>
+        <Route path="/admin/cars" element={<CarManage/>}/>
+        <Route path="/admin/bookings" element={<BookingManage/>}/>
+        <Route path="/admin/cars/add" element={<CarForm/>}/>
       </Routes>
 
       <ToastContainer position="top-right" autoClose={3000} />

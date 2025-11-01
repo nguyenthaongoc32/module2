@@ -7,6 +7,7 @@ import { IoSnowOutline } from "react-icons/io5";
 import { MdOutlineSettings } from "react-icons/md";
 import Header from "../component/Header";
 import Footer from "../component/footer";
+import { Responsive } from "../component/Reponsive.js";
 const CarSearch = () => {
   const location = useLocation();
   const [cars, setCars] = useState([]);
@@ -15,29 +16,33 @@ const CarSearch = () => {
     const fetchCars = async () => {
       try {
         const url = `http://localhost:8080/api/booking/searchCar${location.search}`;
-        console.log("Fetching:", url);  // log URL
+        console.log("Fetching:", url);
         const res = await axios.get(url);
-        console.log("Response:", res.data); // log response
-        if (res.data.success) {
-          setCars(res.data.cars);
+        console.log("Response:", res.data);
+        if (res.data.ok) {
+          setCars(res.data.data); // ✅ correct
+        } else {
+          setCars([]);
         }
       } catch (err) {
         console.error("Error fetching cars", err.response?.data || err.message);
+        setCars([]);
       }
     };
+    
 
     fetchCars();
   }, [location.search]);
 
 
   return (
-    <>
+    <> 
     <Header/>
-      <p className="text-7xl text-gray-500 font-bold ml-20 mt-20">Your
+      <p className="text-7xl text-gray-500 font-bold ml-20 mt-20" >Your
         <span className="text-red-500"> Options</span>
       </p>
       <span className="text-2xl text-gray-500 ml-24">for selected period </span>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 ml-20 mt-10 mr-20">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 ml-20 mt-10 mr-20" responsive={Responsive}>
         {cars.map((car) => (
           <div key={car._id} className="border rounded-lg p-4 shadow">
             <img

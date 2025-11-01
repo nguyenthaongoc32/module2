@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import axios from "axios"
 import { useNavigate } from "react-router-dom";
 import PickupLocationSelect from './LocationSelect';
+import { Responsive } from "../Reponsive.js";
 const Banner = () => {
   const [pickupLocation, setPickupLocation] = useState("");
   const [pickupDate, setPickupDate] = useState("");
@@ -23,7 +24,7 @@ const Banner = () => {
     navigate(`/search-results?${query}`);
   };
   return (
-    <div className="relative w-full bg-white ">
+    <div className="relative w-full bg-white "  responsive={Responsive}>
       {/* Top Section */}
       <div className="flex flex-col md:flex-row items-center justify-center gap-x-12 px-8 md:px-20 py-12">
         {/* Left Content */}

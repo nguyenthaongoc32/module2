@@ -5,7 +5,7 @@ import { MdAirlineSeatReclineNormal } from "react-icons/md";
 import { GiCarDoor } from "react-icons/gi";
 import { IoSnowOutline } from "react-icons/io5";
 import { MdOutlineSettings } from "react-icons/md";
-
+import { Responsive } from "../Reponsive.js";
 const CarCard = ({ car }) => {
   const navigate = useNavigate();
 
@@ -15,7 +15,7 @@ const CarCard = ({ car }) => {
     <div
       className="shadow-lg rounded-xl  bg-white cursor-pointer transition-transform transform hover:scale-105"
       onClick={() => navigate(`/getCar/${_id}`)}
-    >
+      responsive={Responsive}>
       {/* Ảnh xe */}
       <div className=" bg-black ">
         <img

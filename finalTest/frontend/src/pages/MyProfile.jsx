@@ -5,12 +5,12 @@ import ProfileNav from "../component/ProfileNav";
 import AccountInfo from "../component/AccountInfo";
 import MyBookingCar from "../pages/MyBookingCar";
 import { motion, AnimatePresence } from "framer-motion";
-
+import { Responsive } from "../component/Reponsive.js";
 const MyProfile = () => {
   const [activeTab, setActiveTab] = useState("accountInfo");
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50" responsive={Responsive}>
       <Header />
 
       <div className="flex flex-1 max-w-7xl mx-auto mt-8 mb-12 bg-white rounded-lg shadow-lg overflow-hidden">
